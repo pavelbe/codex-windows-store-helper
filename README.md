@@ -1,10 +1,12 @@
-# Codex Windows Store Helper
+# Codex Windows Store Helper 🚀
 
 Safe helper scripts for installing and updating the official Codex App for Windows through Microsoft Store / WinGet.
 
 This repository does not contain Codex binaries, repacks, or extracted Store packages.
 
-## Why this exists
+⭐ If this helper saved you time or helped you get Codex running, please star the repository.
+
+## Why this exists 🧭
 
 The official Windows install path for Codex is Microsoft Store / WinGet:
 
@@ -12,9 +14,9 @@ The official Windows install path for Codex is Microsoft Store / WinGet:
 winget install --id 9PLM9XGG6VKS --source msstore
 ```
 
-In practice, some Windows machines fail earlier because of broken proxy settings or Microsoft Store state. These scripts wrap the official path and add repeatable diagnostics.
+In practice, some Windows machines fail earlier because of broken proxy settings or Microsoft Store state. These scripts wrap the official path and add repeatable diagnostics. 🛠️
 
-## What is included
+## What is included 📦
 
 - `scripts/Get-CodexStoreStatus.ps1`
   - Prints Codex, WinGet, Store, and proxy status.
@@ -29,14 +31,14 @@ In practice, some Windows machines fail earlier because of broken proxy settings
 - `tests/Smoke-Test.ps1`
   - Safe smoke test for the helper scripts.
 
-## Requirements
+## Requirements ✅
 
 - Windows 11
 - Microsoft Store
 - `winget` from `Microsoft.DesktopAppInstaller`
 - Windows PowerShell 5.1 or PowerShell 7
 
-## Quick start
+## Quick start ⚡
 
 Open Windows PowerShell and run:
 
@@ -62,7 +64,7 @@ Update Codex:
 powershell -ExecutionPolicy Bypass -File .\scripts\Update-Codex.ps1
 ```
 
-## Troubleshooting
+## Troubleshooting 🧯
 
 ### `0x80072efd`
 
@@ -82,18 +84,22 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Repair-StoreNetwork.ps1 -Rese
 
 Then retry the official install path.
 
-### Microsoft Store UI shows an error
+### Microsoft Store UI shows an error 🪟
 
 The Store UI can still be flaky even when the backend install flow works. The scripts always use the official `winget + msstore` path.
 
-## Smoke test
+## Smoke test 🧪
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tests\Smoke-Test.ps1
 ```
 
-## Notes
+## Notes 📝
 
 - Store ID: `9PLM9XGG6VKS`
 - Package family: `OpenAI.Codex_2p2nqsd0c76g0`
 - The safest approach is to run the official Store install on the target machine.
+
+## If it helped 💛
+
+If this repo helped you install or update Codex on Windows, please consider leaving a star ⭐
