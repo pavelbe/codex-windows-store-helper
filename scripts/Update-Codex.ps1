@@ -24,7 +24,7 @@ if ($RepairBrokenLoopbackWinHttpProxy -or $ResetStoreCache) {
     & (Join-Path $PSScriptRoot 'Repair-StoreNetwork.ps1') @repairArgs
 }
 
-$installed = Get-InstalledCodexPackage
+$installed = Get-InstalledCodexSnapshot
 if ($null -eq $installed) {
     Write-Step 'Codex is not installed; falling back to install.'
     & (Join-Path $PSScriptRoot 'Install-Codex.ps1') -OpenLogs:$OpenLogs
@@ -32,38 +32,25 @@ if ($null -eq $installed) {
 }
 
 Write-Step ("Current Codex version: {0}" -f $installed.Version)
+Write-Step 'Checking the configured Store source for a newer Codex version.'
+$check = Get-CodexUpgradeCheck -IncludeInteractiveFlags -VerboseLogs -OpenLogs:$OpenLogs
 
-$args = @(
-    'upgrade',
-    '--id', $script:CodexStoreId,
-    '--source', 'msstore',
-    '--accept-source-agreements',
-    '--accept-package-agreements',
-    '--authentication-mode', 'interactive',
-    '--verbose-logs'
-)
-
-if ($OpenLogs) {
-    $args += '--open-logs'
+if (-not [string]::IsNullOrWhiteSpace($check.Output)) {
+    Write-Host $check.Output
 }
 
-$output = (& winget @args 2>&1)
-$output | Out-Host
-
-$exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
-$noUpdateExitCode = -1978335189
-
-if ($exitCode -ne 0) {
-    if ($exitCode -ne $noUpdateExitCode) {
-        throw ("winget upgrade failed with exit code {0}" -f $exitCode)
-    }
-
-    Write-Step 'No newer Codex version is available in the configured Store source.'
+if ($check.ExitCode -ne 0 -and $check.ExitCode -ne -1978335189) {
+    throw ("winget upgrade failed with exit code {0}" -f $check.ExitCode)
 }
 
-$current = Get-InstalledCodexPackage
+$current = Get-InstalledCodexSnapshot
 if ($null -eq $current) {
     throw 'OpenAI.Codex disappeared after the upgrade attempt.'
 }
 
-Write-Step ("Codex is present after update check: {0}" -f $current.Version)
+if ($current.Version -eq $installed.Version) {
+    Write-Step ("Codex version is unchanged after the official Store update check: {0}" -f $current.Version)
+}
+else {
+    Write-Step ("Codex updated successfully: {0} -> {1}" -f $installed.Version, $current.Version)
+}

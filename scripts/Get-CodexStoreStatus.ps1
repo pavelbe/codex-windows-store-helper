@@ -1,5 +1,8 @@
 [CmdletBinding()]
-param()
+param(
+    [int]$HistoryDays = 7,
+    [switch]$SkipHistory
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -8,7 +11,7 @@ $ErrorActionPreference = 'Stop'
 
 Assert-WingetAvailable
 
-$codex = Get-InstalledCodexPackage
+$codex = Get-InstalledCodexSnapshot
 $winHttpRaw = Get-WinHttpProxyRaw
 $userProxy = Get-UserProxyConfig
 $winHttpLoopback = Get-LoopbackEndpointFromText -Text $winHttpRaw
@@ -27,12 +30,7 @@ if ($null -eq $codex) {
     Write-Host 'Codex is not installed.'
 }
 else {
-    [pscustomobject]@{
-        Name            = $codex.Name
-        Version         = [string]$codex.Version
-        Status          = [string]$codex.Status
-        InstallLocation = $codex.InstallLocation
-    } | Format-List
+    $codex | Format-List
 }
 
 Write-Step 'Proxy'
@@ -59,4 +57,29 @@ if ($null -ne $userLoopback) {
         Port        = $userLoopback.Port
         IsListening = (Test-TcpPort -Host $userLoopback.Host -Port $userLoopback.Port)
     } | Format-List
+}
+
+Write-Step 'Update workflow'
+if ($null -eq $codex) {
+    Write-Host 'Codex is not installed. Run Install-Codex.ps1 to install it from the official Microsoft Store source.'
+}
+else {
+    Write-Host 'For this msstore package, winget show does not expose a reliable plain version number from the Store source.'
+    Write-Host 'Use Update-Codex.ps1 when you want the official update check and upgrade flow.'
+}
+
+Write-Step ("Recent Codex Store/AppX history ({0} days)" -f $HistoryDays)
+if ($SkipHistory) {
+    Write-Host 'Skipped.'
+}
+else {
+    $events = @(Get-CodexRelevantEvents -Days $HistoryDays)
+    if ($events.Count -eq 0) {
+        Write-Host 'No matching Codex events were found in the selected time window.'
+    }
+    else {
+        $events |
+            Select-Object TimeCreated, Source, Id, MessagePreview |
+            Format-Table -Wrap -AutoSize
+    }
 }

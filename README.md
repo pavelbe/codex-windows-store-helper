@@ -20,6 +20,8 @@ In practice, some Windows machines fail earlier because of broken proxy settings
 
 - `scripts/Get-CodexStoreStatus.ps1`
   - Prints Codex, WinGet, Store, and proxy status.
+  - Shows current local Codex version and package timestamps.
+  - Shows recent Codex-related AppX/Store history.
 - `scripts/Repair-StoreNetwork.ps1`
   - Reports current Store-related proxy state.
   - Can reset a broken loopback WinHTTP proxy.
@@ -46,6 +48,12 @@ Open Windows PowerShell and run:
 powershell -ExecutionPolicy Bypass -File .\scripts\Get-CodexStoreStatus.ps1
 ```
 
+Check the last 7 days of Codex install/update history:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Get-CodexStoreStatus.ps1 -HistoryDays 7
+```
+
 Install Codex:
 
 ```powershell
@@ -63,6 +71,8 @@ Update Codex:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\Update-Codex.ps1
 ```
+
+If you do not see an obvious Updates menu in the Microsoft Store UI, the helper script above is the simplest way to run the official Store-backed update flow from PowerShell. 🔎
 
 ## Troubleshooting 🧯
 
