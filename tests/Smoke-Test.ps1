@@ -9,36 +9,46 @@ $scriptsRoot = Join-Path $repoRoot 'scripts'
 
 $tests = @(
     @{
-        Name = 'Status'
-        Path = Join-Path $scriptsRoot 'Get-CodexStoreStatus.ps1'
-        Args = @()
+        Name       = 'Status'
+        Path       = Join-Path $scriptsRoot 'Get-CodexStoreStatus.ps1'
+        Parameters = @{
+            HistoryDays = 2
+        }
     },
     @{
-        Name = 'Repair-CheckOnly'
-        Path = Join-Path $scriptsRoot 'Repair-StoreNetwork.ps1'
-        Args = @()
+        Name       = 'Repair-CheckOnly'
+        Path       = Join-Path $scriptsRoot 'Repair-StoreNetwork.ps1'
+        Parameters = @{}
     },
     @{
-        Name = 'Install-Idempotent'
-        Path = Join-Path $scriptsRoot 'Install-Codex.ps1'
-        Args = @()
+        Name       = 'Doctor'
+        Path       = Join-Path $scriptsRoot 'Get-CodexAppDoctor.ps1'
+        Parameters = @{
+            HistoryDays      = 2
+            MaxHistoryEvents = 6
+        }
     },
     @{
-        Name = 'Update-Check'
-        Path = Join-Path $scriptsRoot 'Update-Codex.ps1'
-        Args = @()
+        Name       = 'Install-Idempotent'
+        Path       = Join-Path $scriptsRoot 'Install-Codex.ps1'
+        Parameters = @{}
+    },
+    @{
+        Name       = 'Update-Check'
+        Path       = Join-Path $scriptsRoot 'Update-Codex.ps1'
+        Parameters = @{}
     }
 )
 
 foreach ($test in $tests) {
     Write-Host ''
     Write-Host ("### {0}" -f $test.Name) -ForegroundColor Yellow
-    $arguments = @()
-    if ($null -ne $test.Args) {
-        $arguments += $test.Args
+    $parameters = @{}
+    if ($null -ne $test.Parameters) {
+        $parameters = $test.Parameters
     }
 
-    & $test.Path @arguments
+    & $test.Path @parameters
 }
 
 Write-Host ''

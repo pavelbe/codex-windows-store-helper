@@ -3,6 +3,7 @@ Set-StrictMode -Version Latest
 $script:CodexStoreId = '9PLM9XGG6VKS'
 $script:CodexPackageName = 'OpenAI.Codex'
 $script:CodexPackageFamilyName = 'OpenAI.Codex_2p2nqsd0c76g0'
+$script:WingetNoUpdateExitCode = -1978335189
 
 function Write-Step {
     param(
@@ -150,7 +151,25 @@ function Invoke-WingetWithCapture {
         Arguments = $Arguments
         ExitCode  = $exitCode
         Output    = $outputText
+        NoUpdates = Test-WingetNoUpdates -ExitCode $exitCode -Output $outputText
     }
+}
+
+function Test-WingetNoUpdates {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$ExitCode,
+
+        [AllowNull()]
+        [string]$Output
+    )
+
+    return ($ExitCode -eq $script:WingetNoUpdateExitCode) -or (
+        $ExitCode -eq 0 -and (
+            $Output -like '*No available upgrade found*' -or
+            $Output -like '*No newer package versions are available from the configured sources.*'
+        )
+    )
 }
 
 function Get-CodexUpgradeCheck {
@@ -208,7 +227,7 @@ function Get-CorePackageVersion {
 function Get-CodexRelevantEvents {
     param(
         [int]$Days = 7,
-        [int]$MaxEventsPerLog = 400
+        [int]$MaxEvents = 30
     )
 
     $start = (Get-Date).AddDays(-1 * [Math]::Abs($Days))
@@ -226,13 +245,15 @@ function Get-CodexRelevantEvents {
 
     foreach ($definition in $definitions) {
         try {
-            $events = Get-WinEvent -LogName $definition.LogName -MaxEvents $MaxEventsPerLog -ErrorAction Stop |
+            $events = Get-WinEvent -FilterHashtable @{
+                    LogName = $definition.LogName
+                    StartTime = $start
+                } -ErrorAction Stop |
                 Where-Object {
-                    $_.TimeCreated -ge $start -and (
-                        $_.Message -match 'OpenAI\.Codex' -or
-                        $_.Message -match '9PLM9XGG6VKS'
-                    )
-                }
+                    $_.Message -match 'OpenAI\.Codex' -or
+                    $_.Message -match '9PLM9XGG6VKS'
+                } |
+                Select-Object -First $MaxEvents
 
             foreach ($event in $events) {
                 $message = [string]$event.Message
@@ -255,5 +276,61 @@ function Get-CodexRelevantEvents {
         }
     }
 
-    $result | Sort-Object TimeCreated -Descending
+    $result | Sort-Object TimeCreated -Descending | Select-Object -First $MaxEvents
+}
+
+function Get-StorePageMetadata {
+    param(
+        [string]$Market = 'US'
+    )
+
+    $url = "https://apps.microsoft.com/detail/{0}?hl=en-us&gl={1}" -f $script:CodexStoreId, $Market
+    $response = Invoke-WebRequest -UseBasicParsing -Uri $url -Headers @{ 'User-Agent' = 'Mozilla/5.0' }
+    $line = ($response.Content -split "`n" | Where-Object { $_ -like '*window.pageMetadata = *' } | Select-Object -First 1)
+    if ([string]::IsNullOrWhiteSpace($line)) {
+        throw 'Unable to find window.pageMetadata on the Microsoft Store page.'
+    }
+
+    $jsonText = $line.Substring($line.IndexOf('{')).Trim()
+    if ($jsonText.EndsWith(';')) {
+        $jsonText = $jsonText.Substring(0, $jsonText.Length - 1)
+    }
+
+    $metadata = $jsonText | ConvertFrom-Json
+
+    [pscustomobject]@{
+        Url                  = $url
+        ProductId            = $metadata.productId
+        Title                = $metadata.title
+        ReleaseDateUtc       = $metadata.releaseDateUtc
+        LastUpdateDateUtc    = $metadata.lastUpdateDateUtc
+        PackageLastUpdateUtc = $metadata.packageLastUpdateDateUtc
+        PublicVersion        = $metadata.version
+        PackageFamilyNames   = (($metadata.packageFamilyNames | ForEach-Object { $_ }) -join ', ')
+        InstallerType        = $metadata.installer.type
+        InstallerId          = $metadata.installer.id
+    }
+}
+
+function Get-ManifestSummary {
+    param(
+        [string]$Market = 'US'
+    )
+
+    $url = "https://storeedgefd.dsx.mp.microsoft.com/v9.0/packageManifests/{0}?Market={1}" -f $script:CodexStoreId, $Market
+    $response = Invoke-RestMethod -Uri $url -Headers @{ 'User-Agent' = 'Mozilla/5.0' }
+    $versionEntry = $response.Data.Versions | Select-Object -First 1
+    $installer = $versionEntry.Installers | Select-Object -First 1
+
+    [pscustomobject]@{
+        Url                       = $url
+        PackageIdentifier         = $response.Data.PackageIdentifier
+        PackageVersion            = $versionEntry.PackageVersion
+        Publisher                 = $versionEntry.DefaultLocale.Publisher
+        PackageName               = $versionEntry.DefaultLocale.PackageName
+        Architecture              = $installer.Architecture
+        InstallerType             = $installer.InstallerType
+        PackageFamilyName         = $installer.PackageFamilyName
+        DownloadCommandProhibited = [bool]$installer.DownloadCommandProhibited
+    }
 }

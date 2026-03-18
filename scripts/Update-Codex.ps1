@@ -39,7 +39,7 @@ if (-not [string]::IsNullOrWhiteSpace($check.Output)) {
     Write-Host $check.Output
 }
 
-if ($check.ExitCode -ne 0 -and $check.ExitCode -ne -1978335189) {
+if ($check.ExitCode -ne 0 -and -not $check.NoUpdates) {
     throw ("winget upgrade failed with exit code {0}" -f $check.ExitCode)
 }
 
