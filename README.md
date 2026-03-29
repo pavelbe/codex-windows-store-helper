@@ -23,7 +23,7 @@ In practice, some Windows machines fail earlier because of broken proxy settings
   - Shows current local Codex version and package timestamps.
   - Shows recent Codex-related AppX/Store history.
 - `scripts/Get-CodexAppDoctor.ps1`
-  - Shows installed Codex version, official Store page metadata, manifest metadata, official winget update verdict, and recent events.
+  - Shows installed Codex version, OpenAI changelog metadata, Microsoft display catalog metadata, official Store page metadata, manifest metadata, official winget update verdict, and recent events.
 - `scripts/Repair-StoreNetwork.ps1`
   - Reports current Store-related proxy state.
   - Can reset a broken loopback WinHTTP proxy.
@@ -31,7 +31,9 @@ In practice, some Windows machines fail earlier because of broken proxy settings
 - `scripts/Install-Codex.ps1`
   - Installs Codex from Microsoft Store through `winget`.
 - `scripts/Update-Codex.ps1`
-  - Updates Codex through `winget`, or installs it if missing.
+  - Updates Codex through the official Microsoft Store path.
+  - Tries `winget upgrade` first.
+  - If `winget upgrade` says `no updates`, but newer official Codex metadata already exists, it can fall back to `winget install --force`.
 - `tests/Smoke-Test.ps1`
   - Safe smoke test for the helper scripts.
 
@@ -80,7 +82,13 @@ Update Codex:
 powershell -ExecutionPolicy Bypass -File .\scripts\Update-Codex.ps1
 ```
 
-If you do not see an obvious Updates menu in the Microsoft Store UI, the helper script above is the simplest way to run the official Store-backed update flow from PowerShell. 🔎
+Update Codex with an explicit market for the display catalog check:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Update-Codex.ps1 -Market RU
+```
+
+If you do not see an obvious Updates menu in the Microsoft Store UI, the helper script above is the simplest way to run the official Store-backed update flow from PowerShell. On some machines `winget upgrade` still says `no updates` while the Store catalog is already newer; the helper can now detect that case and try the official `install --force` fallback. 🔎
 
 If you want the closest thing to "what version is installed, what does the public Store metadata say, and does winget see anything newer?", run the doctor script. 🩺
 
@@ -107,6 +115,16 @@ Then retry the official install path.
 ### Microsoft Store UI shows an error 🪟
 
 The Store UI can still be flaky even when the backend install flow works. The scripts always use the official `winget + msstore` path.
+
+### `winget upgrade` says no updates, but you suspect a newer Codex build exists
+
+This is a real pattern with the `msstore` source.
+
+What helped in real machines:
+- `HOME-PC`: repair broken Store / proxy state first, then let the Microsoft Store UI finish the update.
+- `OFFICE-PC`: with healthy Store and clean `WinHTTP`, `winget install --force` succeeded even though `winget upgrade` still reported no updates.
+
+The current `Update-Codex.ps1` script knows this pattern and can try the official `install --force` fallback when newer official metadata already exists.
 
 ## Smoke test 🧪
 

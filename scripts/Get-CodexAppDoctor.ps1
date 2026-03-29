@@ -35,6 +35,36 @@ else {
     $installed | Format-List
 }
 
+$latestOpenAiRelease = $null
+Write-Step 'OpenAI Codex app changelog'
+try {
+    $latestOpenAiRelease = Get-LatestOpenAiCodexAppRelease
+    [pscustomobject]@{
+        LatestVersion = $latestOpenAiRelease.Version
+        PublishedUtc  = $latestOpenAiRelease.DateText
+        Url           = $latestOpenAiRelease.Url
+    } | Format-List
+}
+catch {
+    Write-Host ("OpenAI changelog lookup failed: {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+}
+
+$displayCatalogSummary = $null
+Write-Step 'Microsoft display catalog'
+try {
+    $displayCatalogSummary = Get-DisplayCatalogSummary -Market $Market
+    [pscustomobject]@{
+        Market           = $Market
+        PackageVersion   = $displayCatalogSummary.PackageVersion
+        PackageFullName  = $displayCatalogSummary.PackageFullName
+        LastModifiedDate = $displayCatalogSummary.LastModifiedDate
+        SkuId            = $displayCatalogSummary.SkuId
+    } | Format-List
+}
+catch {
+    Write-Host ("Display catalog lookup failed: {0}" -f $_.Exception.Message) -ForegroundColor Yellow
+}
+
 $pageMetadata = $null
 Write-Step 'Microsoft Store page metadata'
 if ($SkipStorePage) {
@@ -105,6 +135,14 @@ else {
     Write-Host ("Installed version: {0}" -f $installed.Version)
 }
 
+if ($null -ne $latestOpenAiRelease) {
+    Write-Host ("Latest official OpenAI Codex app release: {0} ({1})" -f $latestOpenAiRelease.Version, $latestOpenAiRelease.DateText)
+}
+
+if ($null -ne $displayCatalogSummary) {
+    Write-Host ("Display catalog package version for market {0}: {1}" -f $Market, $displayCatalogSummary.PackageVersion)
+}
+
 if ($null -ne $pageMetadata) {
     if ([string]::IsNullOrWhiteSpace([string]$pageMetadata.PublicVersion)) {
         Write-Host 'Public Microsoft Store page does not expose a plain package version number for this app.'
@@ -132,4 +170,17 @@ if ($null -ne $wingetCheck) {
     else {
         Write-Host ("Official winget update check failed with exit code {0}. Review the output above." -f $wingetCheck.ExitCode)
     }
+}
+
+$installedTrain = if ($null -ne $installed) { Get-ReleaseTrain -VersionText $installed.Version } else { $null }
+$latestTrain = if ($null -ne $latestOpenAiRelease) { Get-ReleaseTrain -VersionText $latestOpenAiRelease.Version } else { $null }
+$compareLatest = Compare-ReleaseTrain -Left $installedTrain -Right $latestTrain
+$availablePackageCompare = if ($null -ne $installed -and $null -ne $displayCatalogSummary) { ([version]$installed.Version).CompareTo([version]$displayCatalogSummary.PackageVersion) } else { $null }
+
+if ($null -ne $compareLatest -and $compareLatest -lt 0 -and $null -ne $wingetCheck -and $wingetCheck.NoUpdates) {
+    Write-Host 'OpenAI changelog shows a newer Codex app release, but winget is not offering it yet on this host.' -ForegroundColor Yellow
+}
+
+if ($null -ne $availablePackageCompare -and $availablePackageCompare -lt 0 -and $null -ne $wingetCheck -and $wingetCheck.NoUpdates) {
+    Write-Host ("Microsoft display catalog already exposes a newer Codex package for market {0}, but winget is still not offering it as an update." -f $Market) -ForegroundColor Yellow
 }

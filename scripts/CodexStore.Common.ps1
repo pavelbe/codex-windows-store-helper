@@ -4,6 +4,7 @@ $script:CodexStoreId = '9PLM9XGG6VKS'
 $script:CodexPackageName = 'OpenAI.Codex'
 $script:CodexPackageFamilyName = 'OpenAI.Codex_2p2nqsd0c76g0'
 $script:WingetNoUpdateExitCode = -1978335189
+$script:OpenAiChangelogUrl = 'https://developers.openai.com/codex/changelog'
 
 function Write-Step {
     param(
@@ -54,6 +55,40 @@ function Get-InstalledCodexSnapshot {
         InstallTimeLocal   = if ($null -ne $locationInfo) { $locationInfo.CreationTime } else { $null }
         LastWriteTimeLocal = if ($null -ne $locationInfo) { $locationInfo.LastWriteTime } else { $null }
     }
+}
+
+function Get-ReleaseTrain {
+    param(
+        [AllowNull()]
+        [string]$VersionText
+    )
+
+    if ([string]::IsNullOrWhiteSpace($VersionText)) {
+        return $null
+    }
+
+    $match = [regex]::Match($VersionText, '^(\d+)\.(\d+)')
+    if (-not $match.Success) {
+        return $null
+    }
+
+    return ('{0}.{1}' -f $match.Groups[1].Value, $match.Groups[2].Value)
+}
+
+function Compare-ReleaseTrain {
+    param(
+        [AllowNull()]
+        [string]$Left,
+
+        [AllowNull()]
+        [string]$Right
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Left) -or [string]::IsNullOrWhiteSpace($Right)) {
+        return $null
+    }
+
+    return ([version]$Left).CompareTo([version]$Right)
 }
 
 function Get-WinHttpProxyRaw {
@@ -202,6 +237,80 @@ function Get-CodexUpgradeCheck {
     }
 
     Invoke-WingetWithCapture -Arguments $args
+}
+
+function Get-LatestOpenAiCodexAppRelease {
+    $response = Invoke-WebRequest -UseBasicParsing -Uri $script:OpenAiChangelogUrl -Headers @{ 'User-Agent' = 'Mozilla/5.0' }
+    $content = [string]$response.Content
+    $entryMatches = [regex]::Matches($content, '(?is)<li id="codex-(?<date>20\d{2}-\d{2}-\d{2})-app-mdx"[^>]*>(?<body>.*?)</li>')
+    if ($entryMatches.Count -eq 0) {
+        throw 'Unable to parse Codex app releases from the OpenAI changelog.'
+    }
+
+    $seen = @{}
+    $releases = New-Object System.Collections.Generic.List[object]
+    foreach ($entryMatch in $entryMatches) {
+        $dateText = $entryMatch.Groups['date'].Value
+        $versionMatch = [regex]::Match($entryMatch.Groups['body'].Value, '(?is)<span>\s*Codex app\s*<span[^>]*>\s*(?<version>\d+\.\d+)\s*</span>')
+        if (-not $versionMatch.Success) {
+            continue
+        }
+
+        $versionText = $versionMatch.Groups['version'].Value
+        $key = '{0}|{1}' -f $dateText, $versionText
+        if ($seen.ContainsKey($key)) {
+            continue
+        }
+
+        $seen[$key] = $true
+        $releases.Add([pscustomobject]@{
+                DateText       = $dateText
+                PublishedOnUtc = [datetime]::ParseExact($dateText, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
+                Version        = $versionText
+                Url            = ('{0}#codex-{1}-app-mdx' -f $script:OpenAiChangelogUrl, $dateText)
+            })
+    }
+
+    if ($releases.Count -eq 0) {
+        throw 'Unable to parse Codex app version entries from the OpenAI changelog.'
+    }
+
+    return $releases | Sort-Object -Property PublishedOnUtc, Version -Descending | Select-Object -First 1
+}
+
+function Get-DisplayCatalogSummary {
+    param(
+        [string]$Market = 'US'
+    )
+
+    $url = 'https://displaycatalog.mp.microsoft.com/v7.0/products/lookup?fieldsTemplate=InstallAgent&market={0}&languages=ru,en,neutral&alternateId=PackageFamilyName&value={1}' -f $Market, $script:CodexPackageFamilyName
+    $response = Invoke-RestMethod -Uri $url -Headers @{ 'User-Agent' = 'Mozilla/5.0' }
+
+    $packages = New-Object System.Collections.Generic.List[object]
+    foreach ($product in @($response.Products)) {
+        foreach ($display in @($product.DisplaySkuAvailabilities)) {
+            foreach ($package in @($display.Sku.Properties.Packages)) {
+                $versionMatch = [regex]::Match([string]$package.PackageFullName, '_(\d+\.\d+\.\d+\.\d+)_')
+                if (-not $versionMatch.Success) {
+                    continue
+                }
+
+                $packages.Add([pscustomobject]@{
+                        PackageVersion  = $versionMatch.Groups[1].Value
+                        PackageFullName = [string]$package.PackageFullName
+                        SkuId           = [string]$display.Sku.SkuId
+                        LastModifiedDate = [string]$display.Sku.LastModifiedDate
+                        LookupUrl       = $url
+                    })
+            }
+        }
+    }
+
+    if ($packages.Count -eq 0) {
+        throw 'Display catalog lookup did not return any Codex packages.'
+    }
+
+    return $packages | Sort-Object { [version]$_.PackageVersion } -Descending | Select-Object -First 1
 }
 
 function Assert-WingetAvailable {
