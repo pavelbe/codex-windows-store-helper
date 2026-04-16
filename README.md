@@ -34,6 +34,9 @@ In practice, some Windows machines fail earlier because of broken proxy settings
   - Updates Codex through the official Microsoft Store path.
   - Tries `winget upgrade` first.
   - If `winget upgrade` says `no updates`, but newer official Codex metadata already exists, it can fall back to `winget install --force`.
+- `scripts/Reinstall-Codex.ps1`
+  - Stops Codex, removes the current Appx package, clears LocalAppData package state, and reinstalls from the official Microsoft Store source.
+  - Use this when Codex shows a black window, refuses to launch correctly, or an in-place update path is stuck.
 - `tests/Smoke-Test.ps1`
   - Safe smoke test for the helper scripts.
 
@@ -88,6 +91,18 @@ Update Codex with an explicit market for the display catalog check:
 powershell -ExecutionPolicy Bypass -File .\scripts\Update-Codex.ps1 -Market RU
 ```
 
+Reinstall Codex when the app itself is broken:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Reinstall-Codex.ps1 -Market RU
+```
+
+Preview what the reinstall script would clean up without making changes:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Reinstall-Codex.ps1 -CheckOnly
+```
+
 If you do not see an obvious Updates menu in the Microsoft Store UI, the helper script above is the simplest way to run the official Store-backed update flow from PowerShell. On some machines `winget upgrade` still says `no updates` while the Store catalog is already newer; the helper can now detect that case and try the official `install --force` fallback. 🔎
 
 If you want the closest thing to "what version is installed, what does the public Store metadata say, and does winget see anything newer?", run the doctor script. 🩺
@@ -115,6 +130,20 @@ Then retry the official install path.
 ### Microsoft Store UI shows an error 🪟
 
 The Store UI can still be flaky even when the backend install flow works. The scripts always use the official `winget + msstore` path.
+
+### Codex opens to a black window ⬛
+
+Use the dedicated reinstall path instead of repeating `winget install --force` over the same broken package state:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Reinstall-Codex.ps1 -Market RU
+```
+
+Preview the cleanup plan first if you want a dry run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Reinstall-Codex.ps1 -CheckOnly
+```
 
 ### `winget upgrade` says no updates, but you suspect a newer Codex build exists
 

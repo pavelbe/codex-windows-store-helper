@@ -37,6 +37,13 @@ $tests = @(
         Name       = 'Update-Check'
         Path       = Join-Path $scriptsRoot 'Update-Codex.ps1'
         Parameters = @{}
+    },
+    @{
+        Name       = 'Reinstall-CheckOnly'
+        Path       = Join-Path $scriptsRoot 'Reinstall-Codex.ps1'
+        Parameters = @{
+            CheckOnly = $true
+        }
     }
 )
 
