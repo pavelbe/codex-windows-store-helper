@@ -242,7 +242,10 @@ function Get-CodexUpgradeCheck {
 function Get-LatestOpenAiCodexAppRelease {
     $response = Invoke-WebRequest -UseBasicParsing -Uri $script:OpenAiChangelogUrl -Headers @{ 'User-Agent' = 'Mozilla/5.0' }
     $content = [string]$response.Content
-    $entryMatches = [regex]::Matches($content, '(?is)<li id="codex-(?<date>20\d{2}-\d{2}-\d{2})-app-mdx"[^>]*>(?<body>.*?)</li>')
+    $entryMatches = [regex]::Matches(
+        $content,
+        '(?is)<li id="codex-(?<date>20\d{2}-\d{2}-\d{2})-app(?:-mdx)?"[^>]*>.*?<time[^>]*>\s*\k<date>\s*</time>.*?<h3[^>]*>.*?(?<version>\d+\.\d+)\s*</span>'
+    )
     if ($entryMatches.Count -eq 0) {
         throw 'Unable to parse Codex app releases from the OpenAI changelog.'
     }
@@ -251,12 +254,7 @@ function Get-LatestOpenAiCodexAppRelease {
     $releases = New-Object System.Collections.Generic.List[object]
     foreach ($entryMatch in $entryMatches) {
         $dateText = $entryMatch.Groups['date'].Value
-        $versionMatch = [regex]::Match($entryMatch.Groups['body'].Value, '(?is)<span>\s*Codex app\s*<span[^>]*>\s*(?<version>\d+\.\d+)\s*</span>')
-        if (-not $versionMatch.Success) {
-            continue
-        }
-
-        $versionText = $versionMatch.Groups['version'].Value
+        $versionText = $entryMatch.Groups['version'].Value
         $key = '{0}|{1}' -f $dateText, $versionText
         if ($seen.ContainsKey($key)) {
             continue
@@ -267,7 +265,7 @@ function Get-LatestOpenAiCodexAppRelease {
                 DateText       = $dateText
                 PublishedOnUtc = [datetime]::ParseExact($dateText, 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
                 Version        = $versionText
-                Url            = ('{0}#codex-{1}-app-mdx' -f $script:OpenAiChangelogUrl, $dateText)
+                Url            = ('{0}#codex-{1}-app' -f $script:OpenAiChangelogUrl, $dateText)
             })
     }
 
