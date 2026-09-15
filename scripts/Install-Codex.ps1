@@ -1,5 +1,10 @@
 [CmdletBinding()]
 param(
+    [ValidateSet('Direct', 'Store')][string]$Source = 'Direct',
+    [switch]$CheckOnly,
+    [switch]$DownloadOnly,
+    [string]$PackagePath,
+    [switch]$OpenApp,
     [switch]$RepairBrokenLoopbackWinHttpProxy,
     [switch]$ResetStoreCache,
     [switch]$OpenLogs
@@ -7,6 +12,14 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if ($Source -eq 'Direct') {
+    if ($RepairBrokenLoopbackWinHttpProxy -or $ResetStoreCache) { throw 'Proxy/cache repair is separate. Use -Source Store explicitly for the legacy Store path.' }
+    if ($OpenLogs) { Write-Warning 'Direct MSIX errors print AppX diagnostics; Store logs are not used.' }
+    & (Join-Path $PSScriptRoot 'Install-CodexDirect.ps1') -CheckOnly:$CheckOnly -DownloadOnly:$DownloadOnly -PackagePath $PackagePath -OpenApp:$OpenApp
+    return
+}
+if ($CheckOnly -or $DownloadOnly -or $PackagePath -or $OpenApp) { throw 'These options require -Source Direct. Use Get-CodexAppDoctor.ps1 for Store diagnostics.' }
 
 . (Join-Path $PSScriptRoot 'CodexStore.Common.ps1')
 
