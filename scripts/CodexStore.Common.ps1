@@ -142,14 +142,15 @@ function Get-LoopbackEndpointFromText {
 function Test-TcpPort {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$Host,
+        [Alias('Host')]
+        [string]$HostName,
 
         [Parameter(Mandatory = $true)]
         [int]$Port
     )
 
     try {
-        return [bool](Test-NetConnection -ComputerName $Host -Port $Port -InformationLevel Quiet -WarningAction SilentlyContinue)
+        return [bool](Test-NetConnection -ComputerName $HostName -Port $Port -InformationLevel Quiet -WarningAction SilentlyContinue)
     }
     catch {
         return $false

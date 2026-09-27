@@ -5,6 +5,27 @@ The repository name and script names remain compatible with Codex; current OpenA
 
 This project contains helper scripts, not repacks, extracted executables or redistributed app binaries.
 
+[Quick start](#install-without-store) · [Troubleshooting](#if-deployment-fails) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [MIT license](LICENSE)
+
+**For Windows 11 users whose Store installation or update is stuck.** The default
+path downloads the official signed package, verifies it and applies it to the
+current user. This is an independent community helper, not an OpenAI or Microsoft product.
+
+| Your goal | Script / option |
+| --- | --- |
+| Install the desktop app | `Install-Codex.ps1 -OpenApp` |
+| Update or reapply its package | `Update-Codex.ps1` / `Reinstall-Codex.ps1` |
+| Inspect availability without installing | `Update-Codex.ps1 -CheckOnly` |
+| Save and verify a package for later | `Install-Codex.ps1 -DownloadOnly` |
+
+```mermaid
+flowchart LR
+    A[Official OpenAI MSIX] --> B[Signature and package checks]
+    B --> C[Architecture and OS checks]
+    C --> D[Apply for current user]
+    D --> E[Verify registered package]
+```
+
 ## Install without Store
 
 1. Download this repository using **Code → Download ZIP**, then extract it.
@@ -141,6 +162,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Smoke-Test.ps1
 ```
 
 This is an **offline** suite: PowerShell parsing, malformed/untrusted/wrong-architecture package checks, downgrade and false-success rejection, non-mutating check/download modes, and a failed-download reinstall regression. OS signing, deployment and network effects are doubled; tests neither install applications nor reset Store state. Unlike the old smoke script, it never invokes real install/update flows as a test.
+
+The suite also checks live/closed loopback-proxy probe results with a network
+double. The probe keeps `-Host` compatibility without assigning PowerShell's
+read-only `$Host` automatic variable.
 
 The data-preservation regression was run against the previous reinstall implementation: a simulated download failure occurred after app removal and session-directory deletion. The same assertion passes with the new implementation. Real x64 package download/signature/manifest verification is separate evidence; installation and launch on a clean machine remain manual checks. Arm64 execution is not yet manually verified.
 

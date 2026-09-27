@@ -61,7 +61,7 @@ if ($null -ne $userLoopback) {
 
 Write-Step 'Update workflow'
 if ($null -eq $codex) {
-    Write-Host 'Codex is not installed. Run Install-Codex.ps1 to install it from the official Microsoft Store source.'
+    Write-Host 'Codex is not installed. Run Install-Codex.ps1 for the official direct MSIX, or add -Source Store for the legacy Store path.'
 }
 else {
     Write-Host 'For this msstore package, winget show does not expose a reliable plain version number from the Store source.'

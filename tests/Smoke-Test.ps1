@@ -12,5 +12,6 @@ foreach ($file in $files) {
     if ($errors.Count -gt 0) { throw ("PowerShell parse failed: {0}: {1}" -f $file.Name, ($errors.Message -join '; ')) }
 }
 Write-Host ("PASS: parsed {0} PowerShell scripts" -f $files.Count)
+& (Join-Path $PSScriptRoot 'Test-CodexCommon.ps1')
 & (Join-Path $PSScriptRoot 'Test-CodexDirect.ps1')
 Write-Host 'Smoke complete: offline contract tests; no app installation, Store reset or network request.'
