@@ -5,6 +5,9 @@ The repository name and script names remain compatible with Codex; current OpenA
 
 This project contains helper scripts, not repacks, extracted executables or redistributed app binaries.
 
+If this fixes your installation, a star helps other Windows users find the
+helper. Installation feedback is welcome; redact account names and logs first.
+
 [Quick start](#install-without-store) · [Troubleshooting](#if-deployment-fails) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [MIT license](LICENSE)
 
 **For Windows 11 users whose Store installation or update is stuck.** The default
@@ -156,6 +159,17 @@ Record the old values first. Do not reset a required corporate proxy or re-enabl
 According to [OpenAI](https://learn.chatgpt.com/docs/enterprise/windows-deployment), the directly installed app can update through `persistent.oaistatic.com` unless managed policy disables its built-in updater. See [update policy](https://learn.chatgpt.com/docs/enterprise/manage-app-updates). This helper does not edit those policies. When automatic updating fails, rerun `Update-Codex.ps1`.
 
 ## Verification and maintenance
+
+The direct installer is also used by HCA. Before transferring an update, compare
+`scripts/Install-CodexDirect.ps1` with HCA's
+`windows/tools/Install-CodexDirect.ps1`; keep the copies identical and run the
+offline suite below. HCA launchers and account-switching scripts have additional
+local dependencies and are not interchangeable with this Windows installer.
+
+For a separate read-only terminal tool that lists existing reset-credit deadlines,
+see [codex-reset-status](https://github.com/pavelbe/codex-reset-status) (Linux/WSL).
+It reads a local auth file but does not switch accounts or consume resets. Never
+attach that file or account-switcher backups to this repository or an issue.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Smoke-Test.ps1
