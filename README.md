@@ -1,14 +1,13 @@
 # Codex Windows Store Helper
 
+[English](README.md) · [Русский: быстрый старт](README.ru.md)
+
 Install, update or reapply the official Windows desktop app **without Microsoft Store or WinGet**.
 The repository name and script names remain compatible with Codex; current OpenAI documentation calls this the **ChatGPT desktop app**. Its package identity is still `OpenAI.Codex`, Store ID `9PLM9XGG6VKS`.
 
 This project contains helper scripts, not repacks, extracted executables or redistributed app binaries.
 
-If this fixes your installation, a star helps other Windows users find the
-helper. Installation feedback is welcome; redact account names and logs first.
-
-[Quick start](#install-without-store) · [Troubleshooting](#if-deployment-fails) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [MIT license](LICENSE)
+[Try without installing](#try-without-installing) · [Install](#install-without-store) · [Troubleshooting](#if-deployment-fails) · [Report a problem](https://github.com/pavelbe/codex-windows-store-helper/issues/new?template=installation.yml) · [MIT license](LICENSE)
 
 **For Windows 11 users whose Store installation or update is stuck.** The default
 path downloads the official signed package, verifies it and applies it to the
@@ -28,6 +27,30 @@ flowchart LR
     C --> D[Apply for current user]
     D --> E[Verify registered package]
 ```
+
+## Try without installing
+
+Download the [source ZIP](https://github.com/pavelbe/codex-windows-store-helper/archive/refs/heads/main.zip),
+extract it, then open **Windows PowerShell 5.1** in the extracted directory:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Update-Codex.ps1 -CheckOnly
+```
+
+This reads the installed package and requests official download metadata. It does
+not download the MSIX, install an app, sign in, or reset any data. Example from a
+real x64 check on 2026-09-27 (versions and size will change):
+
+```text
+Windows: 10.0.22631.6199; architecture: x64
+Installed: 26.924.2738.0; status: Ok
+Official package URL: https://persistent.oaistatic.com/codex-app-prod/ChatGPT-x64.msix
+Available version (HTTP metadata, not signature proof): 26.924.2738.0; bytes: 876623361
+Check-only: no download, installation or data cleanup.
+```
+
+Metadata availability does not verify a downloaded package's signature or prove
+that installation will succeed. The installer performs those checks separately.
 
 ## Install without Store
 

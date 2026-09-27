@@ -1,0 +1,59 @@
+name: Installation or update problem
+description: Report a reproducible problem. English or Russian is welcome.
+title: "[Install] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please share a small, redacted reproduction. Never attach auth.json,
+        tokens, account/session backups, full logs, or screenshots containing
+        personal data. For vulnerabilities, follow SECURITY.md instead.
+  - type: input
+    id: environment
+    attributes:
+      label: Windows and PowerShell versions
+      description: "Example: Windows 11 23H2, Windows PowerShell 5.1. No username or computer name."
+    validations:
+      required: true
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: Device architecture
+      options:
+        - x64
+        - Arm64
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Installation path
+      options:
+        - Direct MSIX (default)
+        - Store (-Source Store)
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and reproduction steps
+      description: Include script options and whether this was a new install or update. Replace personal paths with placeholders.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and actual result
+      description: Include only the relevant error code or short redacted message. A package version or SHA256 is useful; do not upload the MSIX.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Before submitting
+      options:
+        - label: I removed credentials, account identifiers, personal paths and session data.
+          required: true
