@@ -26,15 +26,9 @@ if ($CheckOnly -or $DownloadOnly -or $PackagePath -or $OpenApp) { throw 'These o
 Assert-WingetAvailable
 
 if ($RepairBrokenLoopbackWinHttpProxy -or $ResetStoreCache) {
-    $repairArgs = @()
-    if ($RepairBrokenLoopbackWinHttpProxy) {
-        $repairArgs += '-ResetBrokenLoopbackWinHttpProxy'
-    }
-    if ($ResetStoreCache) {
-        $repairArgs += '-ResetStoreCache'
-    }
-
-    & (Join-Path $PSScriptRoot 'Repair-StoreNetwork.ps1') @repairArgs
+    & (Join-Path $PSScriptRoot 'Repair-StoreNetwork.ps1') `
+        -ResetBrokenLoopbackWinHttpProxy:$RepairBrokenLoopbackWinHttpProxy `
+        -ResetStoreCache:$ResetStoreCache
 }
 
 $existing = Get-InstalledCodexPackage

@@ -9,6 +9,10 @@ Keep fixes small. The default installer lives in `scripts/Install-CodexDirect.ps
 the Store helpers share `scripts/CodexStore.Common.ps1`. Read their callers and
 the tests before changing a contract. Do not use PowerShell automatic variable
 names such as `$Host` for parameters; test through the existing call syntax.
+Forward named PowerShell switches explicitly or with a hashtable; splatting an
+array of switch-name strings passes positional values, unlike native CLI argv.
+The Store entrypoint regressions cover each repair switch, both together and
+the no-repair control without invoking real repair operations.
 
 Run from the repository root in Windows PowerShell 5.1:
 
